@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Text Extractor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 500px; margin: auto; text-align: center; }
+        .qr-code { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Image Text Extractor</h1>
+        <input type="file" id="image" accept="image/*">
+        <button onclick="processImage()">Upload and Extract</button>
+        <div id="result"></div>
+        <div class="qr-code" id="qr-code"></div>
+    </div>
+
+    <script>
+        async function processImage() {
+            const fileInput = document.getElementById('image');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/process-image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            const resultDiv = document.getElementById('result');
+            const qrCodeDiv = document.getElementById('qr-code');
+
+            resultDiv.innerHTML = '';
+            qrCodeDiv.innerHTML = '';
+
+            if (response.ok) {
+                resultDiv.innerHTML = `<p>Extracted Text: ${result.text}</p>`;
+                const qrImage = new Image();
+                qrImage.src = `data:image/png;base64,${btoa(
+                    String.fromCharCode(...new Uint8Array(result.qr_code.match(/../g).map((hex) => parseInt(hex, 16))))
+                )}`;
+                qrCodeDiv.appendChild(qrImage);
+            } else {
+                alert(result.error || 'An error occurred');
+            }
+        }
+    </script>
+</body>
+</html>
